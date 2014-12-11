@@ -6,7 +6,7 @@ refs <- read.csv("GPS data/2014 refs/refs 2014.csv")
 ref.ids <- toupper(refs$name)
 
 #select only focal trees for ref extraction
-trees.foc <- toupper(trees[toupper(trees$foc) == "X",])
+trees.foc <- trees[toupper(trees$foc) == "X",]
 tree.ids <- toupper(trees.foc$tree.id)
 
 

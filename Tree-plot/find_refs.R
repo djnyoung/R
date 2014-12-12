@@ -101,7 +101,7 @@ trees.loclookup[trees.loclookup$backbrg==TRUE,]$brg.to.ref.true <- (trees.locloo
 
 trees.loclookup$x <- rep(NA,nrow(trees.loclookup))
 trees.loclookup$y <- rep(NA,nrow(trees.loclookup))
-trees.loclookup$dummy.coords <- logical(nrow(trees.loclookup))
+trees.loclookup$dummy.coords <- rep(NA,nrow(trees.loclookup))
 
 # export the tree.loclookup table for debugging purposes
 write.csv(trees.loclookup,"trees_loclookup_preprocess.csv")

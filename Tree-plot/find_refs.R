@@ -18,7 +18,6 @@ unresolved.df <- NULL # store the ref resolution for the trees in each iteration
 unresolved.tree.id <- as.character(trees.foc$tree.id)
 unresolved.tree.ref <- as.character(trees.foc$ref)
 
-
 for(i in 1:3) {
 
   #check if ref is self, another tree, is in refs file, or missing, and merge results into dataframe
@@ -31,8 +30,10 @@ for(i in 1:3) {
   #make a list of the trees missing refs
   missing.list <- unresolved.df[[i]][unresolved.df[[i]]$ref.missing==TRUE,]
   
-  #prepare list of the next unresolved trees (trees for which ref is another tree)
-  unresolved.tree.id <- as.character(unresolved.df[[i]][unresolved.df[[1]]$ref.is.tree==TRUE,]$unresolved.tree.id)
-  unresolved.tree.ref <- as.character(unresolved.df[[i]][unresolved.df[[1]]$ref.is.tree==TRUE,]$unresolved.tree.ref)
+  #prepare list of the next unresolved trees (trees for which ref is another tree)--these are the trees REFERENCED by the the current trees
+  unresolved.tree.id <- as.character(unresolved.df[[i]][unresolved.df[[i]]$ref.is.tree==TRUE,]$unresolved.tree.ref)
+  
+  #now need to look up the refs of those trees
+  unresolved.tree.ref <- trees.foc[match(unresolved.tree.id,trees.foc$tree.id),]$ref
   
 }

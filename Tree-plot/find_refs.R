@@ -2,7 +2,7 @@ setwd("C:/Users/DYoung/Dropbox/Research projects/PSME climate adaptation/Data-an
 
 # open data file
 trees <- read.csv("Field data/2014 field data/adult_trees_merged.csv")
-refs <- read.csv("GPS data/2014 refs/refs 2014 merged.csv")
+refs <- read.csv("GPS data/2014 refs/refs 2014 merged albers.csv")
 ref.ids <- toupper(refs$name)
 refs$temp.dummy.coords <- sapply(as.character(refs$temp.dummy.coords),nzchar)
 
@@ -69,11 +69,13 @@ treeloc <- function(tree.name) {
 }
 
 # function for returning points based on offset angle and distance
-offsetx <- function(x,bearing,distance,back.brg) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
+offsetx <- function(x,bearing,distance) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
+  bearing <- (bearing + 180) %% 360
   x + sin(bearing*pi/180)*distance
 }
 
-offsety <- function(y,bearing,distance,back.brg) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
+offsety <- function(y,bearing,distance) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
+  bearing <- (bearing + 180) %% 360
   y + cos(bearing*pi/180)*distance
 }
 
@@ -104,7 +106,7 @@ trees.loclookup$y <- rep(NA,nrow(trees.loclookup))
 trees.loclookup$dummy.coords <- rep(NA,nrow(trees.loclookup))
 
 # export the tree.loclookup table for debugging purposes
-write.csv(trees.loclookup,"trees_loclookup_preprocess.csv")
+#write.csv(trees.loclookup,"trees_loclookup_preprocess.csv")
 
 for(i in 1:nrow(trees.loclookup)) {
   
@@ -145,9 +147,3 @@ for(i in 1:nrow(trees.loclookup)) {
 }
 
 write.csv(trees.loclookup,"trees_loc.csv")
-
-# track whether trees depend on dummy coords
-# make sure bearing is right or should be backbearing
-# check plot data sheet--reconcile the two copies
-# look up ref errors on notecard, also double-check for trees with dummy refs
-# check for duplicated tree ids

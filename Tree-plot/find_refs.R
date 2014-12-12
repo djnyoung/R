@@ -68,68 +68,62 @@ treeloc <- function(tree.name) {
 
 # function for returning points based on offset angle and distance
 offsetx <- function(x,bearing,distance,back.brg) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
-  if(back.brg == TRUE) { bearing <- (bearing-180) %% 360 } #convert back-bearing to forward bearing
   x + sin(bearing*pi/180)*distance
 }
 
 offsety <- function(y,bearing,distance,back.brg) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
-  if(back.brg == TRUE) { bearing <- (bearing-180) %% 360 } #convert back-bearing to forward bearing
   y + cos(bearing*pi/180)*distance
 }
 
 ### end define convenience functions ###
 
-### begin script for looping through trees one-by-one and looking up their location information (either from refs or as offsed from previous tree)
+### begin script for looping through trees one-by-one and looking up their location information (either from refs or as offset from previous tree; for trees that are at the exact location of a reference, distance is set to 0 so there is no offset)
 
-#compute true bearing based on magnetic north bearing and declination
-trees$bearing.true <- (trees$bearing + 13.5) %% 360
-refs$bearing.true <- (refs$bearing + 13.5) %% 360
+## first do some prep
 
-# fill in coordinates for refs that reference other refs
-unk_refs <- refs[which(is.na(refs$x)),]
-unk_refs$x <- offsetx(refloc(unk_refs$ref)$x,unk_refs$bearing.true,unk_refs$dist)
-unk_refs$y <- offsety(refloc(unk_refs$ref)$y,unk_refs$bearing.true,unk_refs$dist)
-refs[which(is.na(refs$x)),] <- unk_refs
+# set bearing and distance to numeric; set blanks to 0
+trees.loclookup$brg.to.ref <- as.numeric(as.character(trees.loclookup$brg.to.ref))
+trees.loclookup[is.na(trees.loclookup$brg.to.ref),]$brg.to.ref <- rep(0,sum(is.na(trees.loclookup$brg.to.ref)))
+trees.loclookup[is.na(trees.loclookup$dist.to.ref),]$dist.to.ref <- rep(0,sum(is.na(trees.loclookup$dist.to.ref)))
 
+# turn backbearing column into boolean
+trees.loclookup$backbrg <- as.character(trees.loclookup$backbrg)
+trees.loclookup$backbrg <- sapply(trees.loclookup$backbrg,nzchar)
 
-## output all refs
-write.csv(refs,"refs.csv")
-
-
+#compute true bearing based on magnetic north bearing and declination; reverse backbearings when necessary
+trees.loclookup$brg.to.ref.true <- (trees.loclookup$brg.to.ref + 13.5) %% 360
+trees.loclookup[trees.loclookup$backbrg==TRUE,]$brg.to.ref.true <- (trees.loclookup[trees.loclookup$backbrg==TRUE,]$brg.to.ref.true + 180) %% 360
 
 # fill in coordinates for trees
 # must do this in a for loop because some later trees reference earlier trees
 
-trees$x <- rep(NA,nrow(trees))
-trees$y <- rep(NA,nrow(trees))
+trees.loclookup$x <- rep(NA,nrow(trees))
+trees.loclookup$y <- rep(NA,nrow(trees))
 
-for(i in 1:nrow(trees)) {
+for(i in 1:nrow(trees.loclookup)) {
   
-  if(trees$ref.type[i] == 'ref') {
+  if(trees.loclookup$ref.is.ref[i]) {  # the reference is a reference (in refs spreadsheet)
     
-    if (nrow(refloc(trees$ref[i]))==0) {
+    if (nrow(refloc(trees.loclookup$ref[i]))==0) {
       print("Reference requested not found: ")
-      print(trees$ref[i])
-    } else if(is.na(refloc(trees$ref[i])$x)) {
+      print(trees.loclookup$ref[i])
+    } else if(is.na(refloc(trees.loclookup$ref[i])$x)) {
       print("Reference requested does not have coordinates: ")
-      print(trees$ref[i])
-    } else if(is.na(trees$bearing.true[i])) { # there are no coordinates, so set the tree equal to the ref coords
-      trees[i,]$x <- refloc(trees$ref[i])$x
-      trees[i,]$y <- refloc(trees$ref[i])$y
+      print(trees.loclookup$ref[i])
     } else {      
-      trees[i,]$x <- offsetx(refloc(trees$ref[i])$x,trees$bearing.true[i],trees$dist[i])
-      trees[i,]$y <- offsety(refloc(trees$ref[i])$y,trees$bearing.true[i],trees$dist[i])
+      trees.loclookup[i,]$x <- offsetx(refloc(trees.loclookup$ref[i])$x,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
+      trees.loclookup[i,]$y <- offsety(refloc(trees.loclookup$ref[i])$y,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
     }
   } else { #the reference is another tree
-    if(nrow(treeloc(trees$ref[i]))==0) {
+    if(nrow(treeloc(trees.loclookup$ref[i]))==0) {
       print("Tree requested as reference not found: ")
-      print(trees$ref[i])
-    } else if (is.na(treeloc(trees$ref[i])$x)) {
+      print(trees.loclookup$ref[i])
+    } else if (is.na(treeloc(trees.loclookup$ref[i])$x)) {
       print("Tree requested as reference does not have coordinates: ")
-      print(trees$ref[i])
+      print(trees.loclookup$ref[i])
     } else {
-      trees[i,]$x <- offsetx(treeloc(trees$ref[i])$x,trees$bearing.true[i],trees$dist[i])
-      trees[i,]$y <- offsety(treeloc(trees$ref[i])$y,trees$bearing.true[i],trees$dist[i])
+      trees.loclookup[i,]$x <- offsetx(treeloc(trees.loclookup$ref[i])$x,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
+      trees.loclookup[i,]$y <- offsety(treeloc(trees.loclookup$ref[i])$y,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
     }
     
   }
@@ -138,4 +132,6 @@ for(i in 1:nrow(trees)) {
 
 write.csv(trees,"trees_loc.csv")
 
+# track whether refs are dummy refs
+# make sure bearing is right or should be backbearing
 

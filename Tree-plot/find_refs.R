@@ -146,4 +146,7 @@ for(i in 1:nrow(trees.loclookup)) {
   
 }
 
-write.csv(trees.loclookup,"trees_loc.csv")
+write.csv(trees.loclookup[trees.loclookup$tree.or.logger=="tree",],"processed data/trees_loc.csv")
+write.csv(trees.loclookup[trees.loclookup$tree.or.logger=="logger",],"processed data/loggers_loc.csv")
+
+#double-check back bearings are working properly

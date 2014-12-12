@@ -41,7 +41,42 @@ while(finished == FALSE) {
   
 }
 
+#get all refs out in order
+sorted.refs <- do.call("rbind",rev(unresolved.df))
+sorted.refs.unique <- unique(sorted.refs) # saves the first occurrence of each tree, so now they are sorted such that earlier ones depend on later ones
 
+
+##### COMPUTE LOCATION INFORMATION #####
+
+### first define functions ###
+
+# function for getting a given ref's location
+refloc <- function(ref.name) {
+  x <- refs[which(refs$name %in% ref.name),]$x
+  y <- refs[which(refs$name %in% ref.name),]$y
+  as.data.frame(cbind(x,y))
+}
+
+# function for getting a given tree's location; requires first assigning trees their x and y
+treeloc <- function(tree.name) {
+  x <- trees[which(trees$tree.id %in% tree.name),]$x
+  y <- trees[which(trees$tree.id %in% tree.name),]$y
+  as.data.frame(cbind(x,y))
+  
+}
+
+# function for returning points based on offset angle and distance
+offsetx <- function(x,bearing,distance,back.brg) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
+  if(back.brg == TRUE) { bearing <- (bearing-180) %% 360 } #convert back-bearing to forward bearing
+  x + sin(bearing*pi/180)*distance
+}
+
+offsety <- function(y,bearing,distance,back.brg) {   #coordinates of reference, angle in true degrees shooting TO the reference, distance in meters
+  if(back.brg == TRUE) { bearing <- (bearing-180) %% 360 } #convert back-bearing to forward bearing
+  y + cos(bearing*pi/180)*distance
+}
+
+### end define functions ###
 
 
 

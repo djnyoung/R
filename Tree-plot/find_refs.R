@@ -4,6 +4,7 @@ setwd("C:/Users/DYoung/Dropbox/Research projects/PSME climate adaptation/Data-an
 trees <- read.csv("Field data/2014 field data/adult_trees_merged.csv")
 refs <- read.csv("GPS data/2014 refs/refs 2014 merged.csv")
 ref.ids <- toupper(refs$name)
+refs$temp.dummy.coords <- sapply(as.character(refs$temp.dummy.coords),nzchar)
 
 #select only focal trees for ref extraction
 trees.foc <- trees[toupper(trees$foc) == "X",]
@@ -55,15 +56,16 @@ names(trees.loclookup)[1:2] <- c("tree.id","tree.ref")
 refloc <- function(ref.name) {
   x <- refs[which(toupper(refs$name) %in% toupper(ref.name)),]$x
   y <- refs[which(toupper(refs$name) %in% toupper(ref.name)),]$y
-  as.data.frame(cbind(x,y))
+  dummy.coords <- refs[which(toupper(refs$name) %in% toupper(ref.name)),]$temp.dummy.coords
+  as.data.frame(cbind(x,y,dummy.coords))
 }
 
 # function for getting a given tree's location; requires first assigning trees their x and y
 treeloc <- function(tree.name) {
   x <- trees.loclookup[which(toupper(trees.loclookup$tree.id) %in% toupper(tree.name)),]$x
   y <- trees.loclookup[which(toupper(trees.loclookup$tree.id) %in% toupper(tree.name)),]$y
-  as.data.frame(cbind(x,y))
-  
+  dummy.coords <- trees.loclookup[which(toupper(trees.loclookup$tree.id) %in% toupper(tree.name)),]$dummy.coords
+  as.data.frame(cbind(x,y,dummy.coords))
 }
 
 # function for returning points based on offset angle and distance
@@ -99,6 +101,7 @@ trees.loclookup[trees.loclookup$backbrg==TRUE,]$brg.to.ref.true <- (trees.locloo
 
 trees.loclookup$x <- rep(NA,nrow(trees.loclookup))
 trees.loclookup$y <- rep(NA,nrow(trees.loclookup))
+trees.loclookup$dummy.coords <- rep(NA,nrow(trees.loclookup))
 
 # export the tree.loclookup table for debugging purposes
 write.csv(trees.loclookup,"trees_loclookup_preprocess.csv")
@@ -118,6 +121,8 @@ for(i in 1:nrow(trees.loclookup)) {
     } else {      
       trees.loclookup[i,]$x <- offsetx(refloc(trees.loclookup$ref[i])$x,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
       trees.loclookup[i,]$y <- offsety(refloc(trees.loclookup$ref[i])$y,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
+      trees.loclookup[i,]$dummy.coords <- refloc(trees.loclookup$ref[i])$dummy.coords
+      
     }
   } else { #the reference is another tree
     if(nrow(treeloc(trees.loclookup$ref[i]))==0) {
@@ -131,6 +136,8 @@ for(i in 1:nrow(trees.loclookup)) {
     } else {
       trees.loclookup[i,]$x <- offsetx(treeloc(trees.loclookup$ref[i])$x,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
       trees.loclookup[i,]$y <- offsety(treeloc(trees.loclookup$ref[i])$y,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
+      trees.loclookup[i,]$dummy.coords <- treeloc(trees.loclookup$ref[i])$dummy.coords
+      
     }
     
   }
@@ -144,4 +151,3 @@ write.csv(trees.loclookup,"trees_loc.csv")
 # check plot data sheet--reconcile the two copies
 # look up ref errors on notecard, also double-check for trees with dummy refs
 # check for duplicated tree ids
-

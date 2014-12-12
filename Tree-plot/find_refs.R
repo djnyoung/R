@@ -12,13 +12,14 @@ tree.ids <- toupper(trees.foc$tree.id)
 ### RUN A LOOP TO FIND ALL BASE LOCATION REFERENCE FOR ALL TREES, EVEN ONES THAT DEPEND ON A CHAIN OF REFERENCES
 
 i <- 1 # keep track of current iteration
+finished <- FALSE
 unresolved.df <- NULL # store the ref resolution for the trees in each iteration
 
 # for each tree that needs its reference resolved, find its id and the listed ref
 unresolved.tree.id <- as.character(trees.foc$tree.id)
 unresolved.tree.ref <- as.character(trees.foc$ref)
 
-for(i in 1:3) {
+while(finished == FALSE) {
 
   #check if ref is self, another tree, is in refs file, or missing, and merge results into dataframe
   ref.is.self <- (unresolved.tree.ref == unresolved.tree.id)
@@ -36,4 +37,14 @@ for(i in 1:3) {
   #now need to look up the refs of those trees
   unresolved.tree.ref <- trees.foc[match(unresolved.tree.id,trees.foc$tree.id),]$ref
   
+  if(length(unresolved.tree.id)==0) {finished<- TRUE} else {i <- i + 1}
+  
 }
+
+
+
+
+
+
+
+

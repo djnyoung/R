@@ -44,7 +44,7 @@ while(finished == FALSE) {
 #get all refs out in order
 sorted.trees <- do.call("rbind",rev(unresolved.df))
 sorted.trees.unique <- unique(sorted.trees) # saves the first occurrence of each tree, so now they are sorted such that earlier ones depend on later ones
-trees.loclookup <- merge(sorted.trees.unique,trees.foc, by.x="unresolved.tree.id",by.y="tree.id")
+trees.loclookup <- merge(sorted.trees.unique,trees.foc, by.x="unresolved.tree.id",by.y="tree.id",sort=FALSE)
 names(trees.loclookup)[1:2] <- c("tree.id","tree.ref")
 
 ##### COMPUTE LOCATION INFORMATION #####
@@ -53,15 +53,15 @@ names(trees.loclookup)[1:2] <- c("tree.id","tree.ref")
 
 # function for getting a given ref's location
 refloc <- function(ref.name) {
-  x <- refs[which(refs$name %in% ref.name),]$x
-  y <- refs[which(refs$name %in% ref.name),]$y
+  x <- refs[which(toupper(refs$name) %in% toupper(ref.name)),]$x
+  y <- refs[which(toupper(refs$name) %in% toupper(ref.name)),]$y
   as.data.frame(cbind(x,y))
 }
 
 # function for getting a given tree's location; requires first assigning trees their x and y
 treeloc <- function(tree.name) {
-  x <- trees[which(trees$tree.id %in% tree.name),]$x
-  y <- trees[which(trees$tree.id %in% tree.name),]$y
+  x <- trees.loclookup[which(toupper(trees.loclookup$tree.id) %in% toupper(tree.name)),]$x
+  y <- trees.loclookup[which(toupper(trees.loclookup$tree.id) %in% toupper(tree.name)),]$y
   as.data.frame(cbind(x,y))
   
 }
@@ -97,8 +97,11 @@ trees.loclookup[trees.loclookup$backbrg==TRUE,]$brg.to.ref.true <- (trees.locloo
 # fill in coordinates for trees
 # must do this in a for loop because some later trees reference earlier trees
 
-trees.loclookup$x <- rep(NA,nrow(trees))
-trees.loclookup$y <- rep(NA,nrow(trees))
+trees.loclookup$x <- rep(NA,nrow(trees.loclookup))
+trees.loclookup$y <- rep(NA,nrow(trees.loclookup))
+
+# export the tree.loclookup table for debugging purposes
+write.csv(trees.loclookup,"trees_loclookup_preprocess.csv")
 
 for(i in 1:nrow(trees.loclookup)) {
   
@@ -107,9 +110,11 @@ for(i in 1:nrow(trees.loclookup)) {
     if (nrow(refloc(trees.loclookup$ref[i]))==0) {
       print("Reference requested not found: ")
       print(trees.loclookup$ref[i])
+      error()
     } else if(is.na(refloc(trees.loclookup$ref[i])$x)) {
       print("Reference requested does not have coordinates: ")
       print(trees.loclookup$ref[i])
+      error()
     } else {      
       trees.loclookup[i,]$x <- offsetx(refloc(trees.loclookup$ref[i])$x,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
       trees.loclookup[i,]$y <- offsety(refloc(trees.loclookup$ref[i])$y,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
@@ -118,9 +123,11 @@ for(i in 1:nrow(trees.loclookup)) {
     if(nrow(treeloc(trees.loclookup$ref[i]))==0) {
       print("Tree requested as reference not found: ")
       print(trees.loclookup$ref[i])
+      error()
     } else if (is.na(treeloc(trees.loclookup$ref[i])$x)) {
       print("Tree requested as reference does not have coordinates: ")
       print(trees.loclookup$ref[i])
+      error()
     } else {
       trees.loclookup[i,]$x <- offsetx(treeloc(trees.loclookup$ref[i])$x,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
       trees.loclookup[i,]$y <- offsety(treeloc(trees.loclookup$ref[i])$y,trees.loclookup$brg.to.ref.true[i],trees.loclookup$dist.to.ref[i])
@@ -130,8 +137,11 @@ for(i in 1:nrow(trees.loclookup)) {
   
 }
 
-write.csv(trees,"trees_loc.csv")
+write.csv(trees.loclookup,"trees_loc.csv")
 
-# track whether refs are dummy refs
+# track whether trees depend on dummy coords
 # make sure bearing is right or should be backbearing
+# check plot data sheet--reconcile the two copies
+# look up ref errors on notecard, also double-check for trees with dummy refs
+# check for duplicated tree ids
 
